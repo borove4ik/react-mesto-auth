@@ -6,6 +6,7 @@ import Main from "./Main";
 import Footer from "./Footer";
 import api from "../utils/Api";
 import { CurrentUserContext } from "../contexts/CurrentUserContext";
+import { Route, Routes } from "react-router-dom";
 import PopupProfile from "./PopupProfile";
 import PopupAddCard from "./PopupAddCard";
 import PopupAvatar from "./PopupAvatar";
@@ -151,6 +152,11 @@ function App() {
     <CurrentUserContext.Provider value={currentUser}>
       <div className="page__content">
         <Header />
+        <Routes>
+          <Route path="/" />
+          <Route path="/sign-up" element={<Register />} />
+          <Route path="/sign-in" element={<Login />} />
+        </Routes>
         <Main
           selectedCard={selectedCard}
           onEditAvatar={handleEditAvatarClick}
