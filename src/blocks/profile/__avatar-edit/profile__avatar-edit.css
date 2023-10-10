@@ -1,0 +1,11 @@
+.profile__avatar-edit{
+    outline: none;
+    background: transparent;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s ease-in-out;
+}
+
+.profile__avatar-edit:active{
+    transform: translate(3px, 3px);
+}

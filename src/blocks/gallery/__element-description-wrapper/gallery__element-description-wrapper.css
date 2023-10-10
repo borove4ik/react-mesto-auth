@@ -1,0 +1,11 @@
+.gallery__element-description-wrapper {
+  display: flex;
+  justify-content: space-between;
+  padding: 24px 20px 26px 21px;
+  align-items: center;
+  background-color: #FFFF;
+  color: black;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+}

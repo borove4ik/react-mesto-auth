@@ -1,0 +1,12 @@
+.profile__info {
+  box-sizing: border-box;
+  padding-top: 22px;
+  padding-bottom: 25px;
+  margin: 0;
+}
+
+@media (max-width: 770px) {
+  .profile__info {
+    padding: 0;
+  }
+}

@@ -1,0 +1,11 @@
+.gallery__like-counter {
+    font-size: 13px;
+    font-weight: 400;
+    line-height: 16px;
+    text-align: center;
+    outline: none;
+    width: 10px;
+    height: 13px;
+    margin: 0 auto;
+
+}
