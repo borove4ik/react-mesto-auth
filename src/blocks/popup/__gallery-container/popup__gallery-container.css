@@ -1,0 +1,6 @@
+.popup__gallery-container {
+  position: relative;
+  max-width: 75vw;
+  margin: 0 auto;
+  max-height: 75vh;
+}
