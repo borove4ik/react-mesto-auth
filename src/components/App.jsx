@@ -6,10 +6,15 @@ import Main from "./Main";
 import Footer from "./Footer";
 import api from "../utils/Api";
 import { CurrentUserContext } from "../contexts/CurrentUserContext";
-import { Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
 import PopupProfile from "./PopupProfile";
 import PopupAddCard from "./PopupAddCard";
 import PopupAvatar from "./PopupAvatar";
+import Login from "./Login";
+import Register from "./Register";
+import ProtectedRouteElement from "./ProtectedRoute";
+import * as auth from "../utils/auth.js";
+import InfoTooltip from "./InfoTooltip.jsx";
 
 function App() {
   const [currentUser, setIsCurrentUser] = React.useState({});
@@ -21,28 +26,33 @@ function App() {
   const [cards, setCards] = React.useState(null);
   const [imageIsOpen, setImageIsOpen] = React.useState(false);
   const [selectedCard, setSelectedCard] = React.useState(null);
+  const [loggedIn, setLoggedIn] = React.useState(false);
+  const [isSucceeded, setIsSucceeded] = React.useState(false);
+  const [infotoolTipOpen, setInfoTooltipOpen] = React.useState(false);
+  const [userEmail, setUserEmail] = React.useState("");
+
+  const navigate = useNavigate();
 
   React.useEffect(() => {
-    api
-      .getInfo()
-      .then((res) => {
-        setIsCurrentUser(res);
-      })
-      .catch((res) => {
-        console.log(res.status);
-      });
-  }, []);
-
-  React.useEffect(() => {
-    api
-      .getCards()
-      .then((res) => {
-        setCards(res);
-      })
-      .catch((res) => {
-        console.log(res.status);
-      });
-  }, []);
+    if (loggedIn) {
+      api
+        .getInfo()
+        .then((res) => {
+          setIsCurrentUser(res);
+        })
+        .catch((res) => {
+          console.log(res.status);
+        });
+      api
+        .getCards()
+        .then((res) => {
+          setCards(res);
+        })
+        .catch((res) => {
+          console.log(res.status);
+        });
+    }
+  }, [loggedIn]);
 
   const handleCardClick = (card) => {
     setSelectedCard(card);
@@ -58,7 +68,6 @@ function App() {
   };
 
   const handleAddPlaceClick = () => {
-    console.log(isAddPlacePopupOpen);
     setIsAddPlacePopupOpen(true);
   };
 
@@ -67,6 +76,7 @@ function App() {
     setIsAddPlacePopupOpen(false);
     setIsEditAvatarPopupOpen(false);
     setImageIsOpen(false);
+    setInfoTooltipOpen(false);
     setSelectedCard(null);
   };
 
@@ -148,25 +158,99 @@ function App() {
       });
   };
 
+  const handleRegister = (email, password) => {
+    auth
+      .register(email, password)
+      .then((res) => {
+        setIsSucceeded(true);
+        setInfoTooltipOpen(true);
+        navigate("/", { replace: true });
+      })
+      .catch((err) => {
+        setIsSucceeded(false);
+        setInfoTooltipOpen(true);
+      });
+  };
+
+  const handleTokenCheck = (jwt) => {
+    auth.checkToken(jwt).then((res) => {
+      if (res) {
+        setLoggedIn(true);
+        navigate("/", { replace: true });
+      }
+    });
+  };
+
+  React.useEffect(() => {
+    const jwt = localStorage.getItem("jwt");
+    if (jwt) {
+      handleTokenCheck(jwt);
+    }
+  }, []);
+
+  const handleLogIn = (email, password) => {
+    auth
+      .login(email, password)
+      .then((res) => {
+        if (res.statusCode === 401) throw new Error("Ошибка авторизации");
+        if (res) {
+          localStorage.setItem("jwt", res.token);
+          setLoggedIn(true);
+          navigate("/", { replace: true });
+        }
+      })
+      .catch((err) => {
+        console.log(`Ошибка авторизации: ${err}`);
+        setInfoTooltipOpen(true);
+        setIsSucceeded(false);
+      });
+  };
+
   return (
     <CurrentUserContext.Provider value={currentUser}>
       <div className="page__content">
-        <Header />
-        <Routes>
-          <Route path="/" />
-          <Route path="/sign-up" element={<Register />} />
-          <Route path="/sign-in" element={<Login />} />
-        </Routes>
-        <Main
-          selectedCard={selectedCard}
-          onEditAvatar={handleEditAvatarClick}
-          onEditProfile={handleEditProfileClick}
-          onAddPlace={handleAddPlaceClick}
-          handleCardClick={handleCardClick}
-          cards={cards}
-          handleCardLike={handleCardLike}
-          handleCardDelete={handleCardDelete}
+        <Header
+          loggedIn={loggedIn}
+          setLoginState={setLoggedIn}
+          resetUserEmail={setUserEmail}
+          userEmail={userEmail}
         />
+        <main className="content">
+          <Routes>
+            <Route
+              path="/"
+              element={
+                <ProtectedRouteElement
+                  element={Main}
+                  loggedIn={loggedIn}
+                  loggedOut={null}
+                  selectedCard={selectedCard}
+                  onEditAvatar={handleEditAvatarClick}
+                  onEditProfile={handleEditProfileClick}
+                  onAddPlace={handleAddPlaceClick}
+                  handleCardClick={handleCardClick}
+                  cards={cards}
+                  handleCardLike={handleCardLike}
+                  handleCardDelete={handleCardDelete}
+                />
+              }
+            />
+            <Route
+              path="/sign-up"
+              element={<Register onRegistration={handleRegister} />}
+            />
+            <Route
+              path="/sign-in"
+              element={<Login onLogIn={handleLogIn} saveEmail={setUserEmail} />}
+            />
+            <Route
+              path="*"
+              element={
+                !loggedIn ? <Navigate to="/sign-in" /> : <Navigate to="/" />
+              }
+            />
+          </Routes>
+        </main>
         <Footer />
         <PopupProfile
           isOpen={isEditProfilePopupOpen}
@@ -187,6 +271,11 @@ function App() {
           isOpen={imageIsOpen}
           onClose={closeAllPopups}
           selectedCard={selectedCard}
+        />
+        <InfoTooltip
+          isOpen={infotoolTipOpen}
+          onClose={closeAllPopups}
+          isSucceeded={isSucceeded}
         />
       </div>
     </CurrentUserContext.Provider>

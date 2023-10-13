@@ -9,7 +9,7 @@ const Main = (props) => {
   const userContext = React.useContext(CurrentUserContext);
 
   return (
-    <main className="content">
+    <>
       <section className="profile">
         <div className="profile__avatar-wrapper">
           <img
@@ -76,7 +76,7 @@ const Main = (props) => {
           );
         })}
       </section>
-    </main>
+    </>
   );
 };
 
