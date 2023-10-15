@@ -40,16 +40,16 @@ function App() {
         .then((res) => {
           setIsCurrentUser(res);
         })
-        .catch((res) => {
-          console.log(res.status);
+        .catch((err) => {
+          console.log(`Ошибка входа пользователя: ${err}`);
         });
       api
         .getCards()
         .then((res) => {
           setCards(res);
         })
-        .catch((res) => {
-          console.log(res.status);
+        .catch((err) => {
+          console.log(`Ошибка загрузки карточек пользователя: ${err}`);
         });
     }
   }, [loggedIn]);
@@ -90,8 +90,8 @@ function App() {
           cards.map((c) => (c._id === card._id ? newCard : c))
         );
       })
-      .catch((res) => {
-        console.log(res.status);
+      .catch((err) => {
+        console.log(`Ошибка при изменении лайка пользователя: ${err}`);
       });
   };
 
@@ -103,24 +103,17 @@ function App() {
           cards.filter((deletedCard) => deletedCard._id !== card._id)
         );
       })
-      .catch((res) => {
-        console.log(res.status);
+      .catch((err) => {
+        console.log(`Ошибка удаления карточки пользователя: ${err}`);
       });
   };
 
   const handleUpdateUser = ({ name, about }) => {
     api
-      .setInfo({ inputName: name, inputInfo: about })
-      .then(() => {
-        api
-          .getInfo()
-          .then((res) => {
-            setIsCurrentUser(res);
-            closeAllPopups();
-          })
-          .catch((res) => {
-            console.log(res.status);
-          });
+      .editUserInfo({ name, about })
+      .then((data) => {
+        setIsCurrentUser(data);
+        closeAllPopups();
       })
       .catch((err) => {
         console.log(`Ошибка загрузки данных пользователя: ${err}`);
@@ -142,16 +135,9 @@ function App() {
   const handleUpdateAvatar = (link) => {
     api
       .updateAvatar({ link })
-      .then(() => {
-        api
-          .getInfo()
-          .then((res) => {
-            setIsCurrentUser(res);
-            closeAllPopups();
-          })
-          .catch((res) => {
-            console.log(res.status);
-          });
+      .then((data) => {
+        setIsCurrentUser(data);
+        closeAllPopups();
       })
       .catch((err) => {
         console.log(`Ошибка при обновлении автара: ${err}`);
@@ -161,7 +147,7 @@ function App() {
   const handleRegister = (email, password) => {
     auth
       .register(email, password)
-      .then((res) => {
+      .then(() => {
         setIsSucceeded(true);
         setInfoTooltipOpen(true);
         navigate("/", { replace: true });
@@ -169,24 +155,24 @@ function App() {
       .catch((err) => {
         setIsSucceeded(false);
         setInfoTooltipOpen(true);
+        console.log(`Ошибка при регистрации: ${err}`);
       });
   };
 
   const handleTokenCheck = (jwt) => {
-    auth.checkToken(jwt).then((res) => {
-      if (res) {
-        setLoggedIn(true);
-        navigate("/", { replace: true });
-      }
-    });
+    auth
+      .checkToken(jwt)
+      .then((res) => {
+        if (res) {
+          setUserEmail(res.data.email);
+          setLoggedIn(true);
+          navigate("/", { replace: true });
+        }
+      })
+      .catch((err) => {
+        console.log(`Ошибка проверки входа пользователя: ${err}`);
+      });
   };
-
-  React.useEffect(() => {
-    const jwt = localStorage.getItem("jwt");
-    if (jwt) {
-      handleTokenCheck(jwt);
-    }
-  }, []);
 
   const handleLogIn = (email, password) => {
     auth
@@ -205,6 +191,13 @@ function App() {
         setIsSucceeded(false);
       });
   };
+
+  React.useEffect(() => {
+    const jwt = localStorage.getItem("jwt");
+    if (jwt) {
+      handleTokenCheck(jwt);
+    }
+  }, []);
 
   return (
     <CurrentUserContext.Provider value={currentUser}>
